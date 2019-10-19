@@ -12,7 +12,7 @@ in vec3 pos;
 
 out vec3 color;
 
-#define TASK 3
+#define TASK 4
 
 #define PI 3.1415926535897932384626433832795
 #define RENDER_DEPTH 1000
