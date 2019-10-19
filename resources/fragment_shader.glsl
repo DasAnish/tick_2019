@@ -22,8 +22,8 @@ out vec3 color;
 #define BALL 0
 #define BASE 1
 
-#define SCENE task2
-#define FULL_SCENE task3
+#define SCENE torus
+#define FULL_SCENE task4
 
 #define GRADIENT(pt, func) vec3( \
     func(vec3(pt.x + 0.0001, pt.y, pt.z)) - func(vec3(pt.x - 0.0001, pt.y, pt.z)), \
@@ -93,13 +93,24 @@ float flr(vec3 pt) {
 
 float task3(vec3 pt) {
     float fl = flr(pt);
-    float task = SCENE(pt);
+    float task = task2(pt);
     return min(fl, task);
+}
+
+//Task 4
+float torus(vec3 pt) {
+    vec2 t = vec2(3, 1);
+    vec2 q = vec2(length(pt.xz) - t.x, pt.y);
+    return length(q) - t.y;
+}
+
+float task4(vec3 pt) {
+    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
 }
 
 vec3 getNormal(vec3 pt) {
     //  return normalize(GRADIENT (pt, sphere));
-    vec3 vec = GRADIENT(pt, task3);
+    vec3 vec = GRADIENT(pt, FULL_SCENE);
     return normalize(vec);
 }
 
@@ -133,7 +144,10 @@ float shade(vec3 eye, vec3 pt, vec3 n) {
 
     for (int i = 0; i < LIGHT_POS.length(); i++) {
         vec3 l = normalize(LIGHT_POS[i] - pt);
+        vec3 r = normalize(reflect(n, l));
+        vec3 v = normalize(pt - eye);
         val += max(dot(n, l), 0);
+        val += pow(max(dot(r, v), 0), 256);
     }
     return val;
 }
