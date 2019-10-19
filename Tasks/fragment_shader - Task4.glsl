@@ -12,10 +12,10 @@ in vec3 pos;
 
 out vec3 color;
 
-#define TASK 4
+#define TASK 3
 
 #define PI 3.1415926535897932384626433832795
-#define RENDER_DEPTH 1000
+#define RENDER_DEPTH 800
 #define CLOSE_ENOUGH 0.00001
 
 #define BACKGROUND -1
@@ -88,7 +88,7 @@ float task2(vec3 pt) {
 //// Task3
 
 float flr(vec3 pt) {
-    return pt.y+1;
+    return dot(pt-vec3(0, -1, 0), vec3(0, 1, 0));
 }
 
 float task3(vec3 pt) {
@@ -99,14 +99,26 @@ float task3(vec3 pt) {
 
 //Task 4
 float torus(vec3 pt) {
+    pt = pt - vec3(0, 3, 0);
     vec2 t = vec2(3, 1);
     vec2 q = vec2(length(pt.xz) - t.x, pt.y);
     return length(q) - t.y;
 }
 
-float task4(vec3 pt) {
-    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
+//Task5 Torus
+float Torus(vec3 pt) {
+    pt = pt - vec3(0, 3, 0);
+    vec2 t = vec2(3, 1);
+    vec2 q = vec2(length(pt.xy) - t.x, pt.y);
+    return length(q) - t.y;
 }
+
+float task4(vec3 pt) {
+    //    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
+    return min(torus(pt), flr(pt));
+}
+
+
 
 vec3 getNormal(vec3 pt) {
     //  return normalize(GRADIENT (pt, sphere));
@@ -119,13 +131,13 @@ vec3 getColor(vec3 pt) {
     vec3 green = vec3(0.4, 1, 0.4);
     vec3 blue = vec3(0.4, 0.4, 1);
 
-    if (flr(pt)>CLOSE_ENOUGH) return vec3(1);
+    if (flr(pt)>=CLOSE_ENOUGH) return vec3(1);
     else { //Handling the color
 
-        float dis = SCENE(pt);
+        float dis = abs(SCENE(pt));
         dis = mod(dis, 5);
 
-        if (dis>4.75) {
+        if (dis>=4.75) {
             return vec3(0);
         } else {
             dis = mod(dis, 1);
