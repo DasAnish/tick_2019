@@ -114,7 +114,7 @@ float Torus(vec3 pt) {
 }
 
 float task4(vec3 pt) {
-//    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
+    //    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
     return min(torus(pt), flr(pt));
 }
 
