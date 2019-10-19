@@ -32,21 +32,21 @@ const vec3 LIGHT_POS[] = vec3[](vec3(5, 18, 10));
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 getBackground(vec3 dir) {
-  float u = 0.5 + atan(dir.z, -dir.x) / (2 * PI);
-  float v = 0.5 - asin(dir.y) / PI;
-  vec4 texColor = texture(tex, vec2(u, v));
-  return texColor.rgb;
+    float u = 0.5 + atan(dir.z, -dir.x) / (2 * PI);
+    float v = 0.5 - asin(dir.y) / PI;
+    vec4 texColor = texture(tex, vec2(u, v));
+    return texColor.rgb;
 }
 
 vec3 getRayDir() {
-  vec3 xAxis = normalize(cross(camDir, camUp));
-  return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
+    vec3 xAxis = normalize(cross(camDir, camUp));
+    return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 float sphere(vec3 pt) {
-  return length(pt) - 1;
+    return length(pt) - 1;
 }
 
 float cube(vec3 pt) {
@@ -54,58 +54,58 @@ float cube(vec3 pt) {
 }
 
 vec3 getNormal(vec3 pt) {
-//  return normalize(GRADIENT (pt, sphere));
-  vec3 vec = GRADIENT(pt, cube);
-  return normalize(vec);
+    //  return normalize(GRADIENT (pt, sphere));
+    vec3 vec = GRADIENT(pt, cube);
+    return normalize(vec);
 }
 
 vec3 getColor(vec3 pt) {
-  return vec3(1);
+    return vec3(1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 float shade(vec3 eye, vec3 pt, vec3 n) {
-  float val = 0;
-  
-  val += 0.1;  // Ambient
-  
-  for (int i = 0; i < LIGHT_POS.length(); i++) {
-    vec3 l = normalize(LIGHT_POS[i] - pt); 
-    val += max(dot(n, l), 0);
-  }
-  return val;
+    float val = 0;
+
+    val += 0.1;  // Ambient
+
+    for (int i = 0; i < LIGHT_POS.length(); i++) {
+        vec3 l = normalize(LIGHT_POS[i] - pt);
+        val += max(dot(n, l), 0);
+    }
+    return val;
 }
 
 vec3 illuminate(vec3 camPos, vec3 rayDir, vec3 pt) {
-  vec3 c, n;
-  n = getNormal(pt);
-  c = getColor(pt);
-  return shade(camPos, pt, n) * c;
+    vec3 c, n;
+    n = getNormal(pt);
+    c = getColor(pt);
+    return shade(camPos, pt, n) * c;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 raymarch(vec3 camPos, vec3 rayDir) {
-  int step = 0;
-  float t = 0;
+    int step = 0;
+    float t = 0;
 
-  for (float d = 1000; step < RENDER_DEPTH && abs(d) > CLOSE_ENOUGH; t += abs(d)) {
-    d = cube(camPos + t * rayDir);
-    step++;
-  }
+    for (float d = 1000; step < RENDER_DEPTH && abs(d) > CLOSE_ENOUGH; t += abs(d)) {
+        d = cube(camPos + t * rayDir);
+        step++;
+    }
 
-  if (step == RENDER_DEPTH) {
-    return getBackground(rayDir);
-  } else if (showStepDepth) {
-    return vec3(float(step) / RENDER_DEPTH);
-  } else {
-    return illuminate(camPos, rayDir, camPos + t * rayDir);
-  }
+    if (step == RENDER_DEPTH) {
+        return getBackground(rayDir);
+    } else if (showStepDepth) {
+        return vec3(float(step) / RENDER_DEPTH);
+    } else {
+        return illuminate(camPos, rayDir, camPos + t * rayDir);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void main() {
-  color = raymarch(camPos, getRayDir());
+    color = raymarch(camPos, getRayDir());
 }
