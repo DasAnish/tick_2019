@@ -57,8 +57,6 @@ float cube(vec3 pt) {
     return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
 }
 
-//Implimentations for task2
-
 float smin(float a, float b) {
     float k = 0.2;
     float h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1);
@@ -66,46 +64,19 @@ float smin(float a, float b) {
     return mix(b, a, h) - k*h*(1-h);
 }
 
-float task2(vec3 pt) {
-    float cube1 = cube(pt-vec3(3, 0, 3));
-    float cube2 = cube(pt-vec3(-3, 0, 3));
-    float cube3 = cube(pt-vec3(-3, 0, -3));
-    float cube4 = cube(pt-vec3(3, 0, -3));
-
-    float sphere1 = sphere(pt - vec3(4, 0, 4));
-    float sphere2 = sphere(pt - vec3(-2, 0, 4));
-    float sphere3 = sphere(pt - vec3(-2, 0, -2));
-    float sphere4 = sphere(pt - vec3(4, 0, -2));
-
-    float val1 = max(cube1, sphere1);
-    float val2 = smin(cube2, sphere2);
-    float val3 = min(cube3, sphere3);
-    float val4 = max(cube4, -sphere4);
-
-    return min(min(val1, val2), min(val3, val4));
-}
-
-//// Task3
-
 float flr(vec3 pt) {
     return pt.y+1;
-}
-
-float task3(vec3 pt) {
-    float fl = flr(pt);
-    float task = task2(pt);
-    return min(fl, task);
 }
 
 //Task 4
 float torus(vec3 pt) {
     vec2 t = vec2(3, 1);
-    vec2 q = vec2(length(pt.xz) - t.x, pt.y);
+    vec2 q = vec2(length(pt.xy) - t.x, pt.z);
     return length(q) - t.y;
 }
 
 float task4(vec3 pt) {
-    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
+    return min(torus(pt-vec3(0, 2, 0)), flr(pt));
 }
 
 vec3 getNormal(vec3 pt) {
@@ -137,6 +108,28 @@ vec3 getColor(vec3 pt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//Task 5
+float shadow(vec3 pt, vec3 lightPos) {
+    vec3 lightDir = normalize(lightPos - pt);
+    float kd = 1;
+    int step = 0;
+
+    for (float t = 0.1; t < length(lightPos - pt) && step < RENDER_DEPTH && kd > 0.001;) {
+        float d = abs(SCENE(pt + t*lightDir));
+
+        if (d<0.001) {
+            kd = 0;
+        } else {
+            kd = min(kd, 16*d / t);
+        }
+
+        t += d;
+        step++;
+    }
+
+    return kd;
+}
+
 float shade(vec3 eye, vec3 pt, vec3 n) {
     float val = 0;
 
@@ -147,8 +140,9 @@ float shade(vec3 eye, vec3 pt, vec3 n) {
         n = normalize(n);
         vec3 r = normalize(reflect(-l, n));
         vec3 v = normalize(eye - pt);
-        val += max(dot(n, l), 0);
-        val += pow(max(dot(r, v), 0), 256);
+        float kd = shadow(pt, LIGHT_POS[i]);
+        val += kd*max(dot(n, l), 0);
+        val += kd*pow(max(dot(r, v), 0), 256);
     }
     return val;
 }
