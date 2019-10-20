@@ -149,6 +149,7 @@ float box(vec3 pt, float s, float phase) {
 }
 
 float building(vec3 pt, float s) {
+    pt.z = pt.z + 3*s;
     float y = pt.y;
     y = round(y);
 
@@ -159,10 +160,79 @@ float building(vec3 pt, float s) {
     return box(pt, s-2, 10);
 }
 
+float cylinder(vec3 pt, vec3 c) {
+    return length(pt.xz - c.xy) - c.z;
+}
+
+float cuboid(vec3 pt, vec3 b) {
+    vec3 q = abs(pt) - b;
+
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float small_cylinder(vec3 pt, float radius, float s) {
+    float p = PI/2;
+    vec3 PT = pt;
+//    float sc1 = small_cylinder(pt, radius, s);
+
+    pt.x = PT.x * cos(p) - PT.y * sin(p);
+    pt.y = PT.x * sin(p) + PT.y * cos(p);
+    float cube = cuboid(pt, vec3(s, radius*2, s));
+    float cylinder = cylinder(pt, vec3(0, 0, radius));
+
+    return max(cylinder, cube);
+}
+
+float three_small_cylinder(vec3 pt, float radius, float s) {
+    float p = PI/2;
+    vec3 PT = pt;
+    float sc1 = small_cylinder(pt, radius, s);
+
+    pt.x = PT.x * cos(p) - PT.y * sin(p);
+    pt.y = PT.x * sin(p) + PT.y * cos(p);
+    float sc2 = small_cylinder(pt, radius, s);
+
+    PT = pt;
+    pt.x = rotateX(PT, p);
+    pt.z = rotateZ(PT, p);
+    float sc3 = small_cylinder(pt, radius, s);
+
+    return min(sc1, min(sc2,sc3));
+}
+
+vec3 animate(vec3 pt) {
+    float t = mod(currentTime/3, 3);
+    float angle = mod(t, 1)*PI / 2;
+    vec3 p = pt;
+    if (t<1) {
+        pt.x = p.x * cos(angle) - p.y * sin(angle);
+        pt.y = p.x * sin(angle) + p.y * cos(angle);
+    } else if (t < 2) {
+        pt.x = p.x * cos(angle) - p.z * sin(angle);
+        pt.z = p.x * sin(angle) + p.z * cos(angle);
+    } else {
+        pt.y = p.y * cos(angle) - p.z * sin(angle);
+        pt.z = p.y * sin(angle) + p.z * cos(angle);
+    }
+
+    return pt;
+}
+
+
+float final_artifact(vec3 pt, float radius, float s) {
+    pt = animate(pt);
+    float tsc = three_small_cylinder(pt, radius, s);
+    float c = sphere(pt, s-3);
+
+    return max(c, -tsc);
+
+}
+
 float task6(vec3 pt) {
+    float fa = final_artifact(pt, 1, 5);
     float of = Outer_frame(pt, 3);
     float plane = building(pt, 4);
-    return min(of, plane);
+    return min(min(of, plane), fa);
 }
 
 float getScene(vec3 pt) {
