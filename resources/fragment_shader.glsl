@@ -12,7 +12,7 @@ in vec3 pos;
 
 out vec3 color;
 
-#define TASK 3
+#define TASK 6
 
 #define PI 3.1415926535897932384626433832795
 #define RENDER_DEPTH 800
@@ -22,8 +22,8 @@ out vec3 color;
 #define BALL 0
 #define BASE 1
 
-#define SCENE Torus
-#define FULL_SCENE task5
+//#define SCENE task6
+//#define FULL_SCENE getScene
 
 #define GRADIENT(pt, func) vec3( \
     func(vec3(pt.x + 0.0001, pt.y, pt.z)) - func(vec3(pt.x - 0.0001, pt.y, pt.z)), \
@@ -66,38 +66,11 @@ float smin(float a, float b) {
     return mix(b, a, h) - k*h*(1-h);
 }
 
-float task2(vec3 pt) {
-    float cube1 = cube(pt-vec3(3, 0, 3));
-    float cube2 = cube(pt-vec3(-3, 0, 3));
-    float cube3 = cube(pt-vec3(-3, 0, -3));
-    float cube4 = cube(pt-vec3(3, 0, -3));
-
-    float sphere1 = sphere(pt - vec3(4, 0, 4));
-    float sphere2 = sphere(pt - vec3(-2, 0, 4));
-    float sphere3 = sphere(pt - vec3(-2, 0, -2));
-    float sphere4 = sphere(pt - vec3(4, 0, -2));
-
-    float val1 = max(cube1, sphere1);
-    float val2 = smin(cube2, sphere2);
-    float val3 = min(cube3, sphere3);
-    float val4 = max(cube4, -sphere4);
-
-    return min(min(val1, val2), min(val3, val4));
-}
-
-//// Task3
 
 float flr(vec3 pt) {
     return dot(pt-vec3(0, -1, 0), vec3(0, 1, 0));
 }
 
-float task3(vec3 pt) {
-    float fl = flr(pt);
-    float task = task2(pt);
-    return min(fl, task);
-}
-
-//Task 4
 float torus(vec3 pt) {
     pt = pt - vec3(0, 3, 0);
     vec2 t = vec2(3, 1);
@@ -113,13 +86,37 @@ float Torus(vec3 pt) {
     return length(q) - t.y;
 }
 
-float task4(vec3 pt) {
-    //    return min(torus(pt-vec3(0, 3, 0)), flr(pt));
-    return min(torus(pt), flr(pt));
+//Task6
+float octahedron(vec3 pt, float s) {
+    pt = abs(pt);
+    float m = pt.x + pt.y + pt.z - s;
+
+    vec3 q;
+
+    if (3*pt.x < m) q = pt.xyz;
+    else if (3*pt.y < m) q = pt.yzx;
+    else if (3*pt.z < m) q = pt.zxy;
+    else return m * 0.57735027;
+
+    float K = clamp(0.5 * (q.z-q.y+s), 0.0, s);
+    return length(vec3(q.x, q.y-s+K, q.z-K));
 }
 
-float task5(vec3 pt) {
-    return min(Torus(pt), flr(pt));
+float task6(vec3 pt) {
+    float oct =  octahedron(pt, 3);
+    return oct;
+}
+
+float getScene(vec3 pt) {
+    return min(task6(pt), flr(pt));
+}
+
+float FULL_SCENE(vec3 pt) {
+    return getScene(pt);
+}
+
+float SCENE(vec3 pt) {
+    return task6(pt);
 }
 
 vec3 getNormal(vec3 pt) {
