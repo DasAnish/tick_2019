@@ -15,7 +15,7 @@ out vec3 color;
 #define TASK 6
 
 #define PI 3.1415926535897932384626433832795
-#define RENDER_DEPTH 800
+#define RENDER_DEPTH 1000
 #define CLOSE_ENOUGH 0.00001
 
 #define BACKGROUND -1
@@ -46,12 +46,12 @@ vec3 getRayDir() {
     return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
 }
 
-float rotateX(vec3 pt) {
-    return pt.x * cos(currentTime) - pt.z * sin(currentTime);
+float rotateX(vec3 pt, float time) {
+    return pt.x * cos(time) - pt.z * sin(time);
 }
 
-float rotateZ(vec3 pt) {
-    return pt.x * sin(currentTime) + pt.z * cos(currentTime);
+float rotateZ(vec3 pt, float time) {
+    return pt.x * sin(time) + pt.z * cos(time);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -126,23 +126,42 @@ float outer_frame(vec3 pt, float s) {
     return max(max(-cir, oct), -cir2);
 }
 
-float box(vec3 pt, float s) {
-        vec3 p = pt;
-        pt.x = rotateX(p);
-        pt.z = rotateZ(p);
-    vec3 q = abs(pt) - vec3(s, 0.05, s);
-    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+float Outer_frame(vec3 pt, float s) {
+//    if (pt.x>-4*s && pt.x<4*s) {
+//        pt.x = mod(pt.x, 4*s)-2*s;
+//    }
+    float X = pt.x;
+    float val = 10000;
+    for (int i = -1; i<2; i+=2) {
+        pt = vec3(X + i*4*s, pt.y, pt.z);
+        val = min(val, outer_frame(pt, s));
+    }
+
+    return val;
 }
 
-float plane(vec3 pt, float s) {
-    pt.y = pt.y - s+1;
+float box(vec3 pt, float s, float phase) {
+        vec3 p = pt;
+//        pt.x = rotateX(p, currentTime+phase);
+//        pt.z = rotateZ(p, phase+currentTime);
+    vec3 q = abs(pt) - vec3(s, 0.001, s);
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0)-0.6;
+}
 
-    return box(pt, s-2);
+float building(vec3 pt, float s) {
+    float y = pt.y;
+    y = round(y);
+
+    pt.y = pt.y - clamp(round(pt.y), 0, 10);
+
+//    pt.y = mod(pt.y, 1);
+
+    return box(pt, s-2, 10);
 }
 
 float task6(vec3 pt) {
-    float of = outer_frame(pt, 5);
-    float plane = plane(pt, 5);
+    float of = Outer_frame(pt, 3);
+    float plane = building(pt, 4);
     return min(of, plane);
 }
 
@@ -168,6 +187,7 @@ vec3 getColor(vec3 pt) {
 
     vec3 green = vec3(0.4, 1, 0.4);
     vec3 blue = vec3(0.4, 0.4, 1);
+    vec3 red = vec3(1, 0.4, 0.4);
 
     if (flr(pt)>=CLOSE_ENOUGH) return vec3(1);
     else { //Handling the color
@@ -178,8 +198,15 @@ vec3 getColor(vec3 pt) {
         if (dis>=4.75) {
             return vec3(0);
         } else {
-            dis = mod(dis, 1);
-            return mix(green, blue, dis);
+            dis = dis * 6 / 4.75;
+            dis = mod(dis, 2);
+            if (dis>1) {
+                dis = mod(dis, 1);
+                return mix(green, blue, dis);
+            } else {
+                dis = mod(dis, 1);
+                return mix(blue, red, dis);
+            }
         }
 
     }
