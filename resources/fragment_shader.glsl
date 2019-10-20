@@ -46,14 +46,22 @@ vec3 getRayDir() {
     return normalize(pos.x * (resolution.x / resolution.y) * xAxis + pos.y * camUp + 5 * camDir);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-float sphere(vec3 pt) {
-    return length(pt) - 1;
+float rotateX(vec3 pt) {
+    return pt.x * cos(currentTime) - pt.z * sin(currentTime);
 }
 
-float cube(vec3 pt) {
-    vec3 d = abs(pt) - vec3(1);
+float rotateZ(vec3 pt) {
+    return pt.x * sin(currentTime) + pt.z * cos(currentTime);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+float sphere(vec3 pt, float r) {
+    return length(pt) - r;
+}
+
+float cube(vec3 pt, float s) {
+    vec3 d = abs(pt) - vec3(s);
     return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
 }
 
@@ -91,6 +99,7 @@ float octahedron(vec3 pt, float s) {
     pt = abs(pt);
     float m = pt.x + pt.y + pt.z - s;
 
+//    return m*0.57735027;
     vec3 q;
 
     if (3*pt.x < m) q = pt.xyz;
@@ -102,9 +111,39 @@ float octahedron(vec3 pt, float s) {
     return length(vec3(q.x, q.y-s+K, q.z-K));
 }
 
+float outer_frame(vec3 pt, float s) {
+    pt = pt - vec3(0, s-1, 0);
+//    float t = (pt.y+1.5) * sin(currentTime*0.5);
+    float t = currentTime;
+    vec3 p = pt;
+    pt.x = p.x * cos(t) - p.z * sin(t);
+//    pt.y = pt.y/2;
+    pt.z = p.x * sin(t) + p.z * cos(t);
+    float oct =  octahedron(pt, s);
+    float cir = cube(pt, s/2);
+    float cir2 = sphere(pt, s/1.5);
+
+    return max(max(-cir, oct), -cir2);
+}
+
+float box(vec3 pt, float s) {
+        vec3 p = pt;
+        pt.x = rotateX(p);
+        pt.z = rotateZ(p);
+    vec3 q = abs(pt) - vec3(s, 0.05, s);
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float plane(vec3 pt, float s) {
+    pt.y = pt.y - s+1;
+
+    return box(pt, s-2);
+}
+
 float task6(vec3 pt) {
-    float oct =  octahedron(pt, 3);
-    return oct;
+    float of = outer_frame(pt, 5);
+    float plane = plane(pt, 5);
+    return min(of, plane);
 }
 
 float getScene(vec3 pt) {
