@@ -80,7 +80,7 @@ float flr(vec3 pt) {
 }
 
 float torus(vec3 pt) {
-//    pt = pt - vec3(0, 3, 0);
+    //    pt = pt - vec3(0, 3, 0);
     vec2 t = vec2(5, 0.5);
     vec2 q = vec2(length(pt.xz) - t.x, pt.y);
     return length(q) - t.y;
@@ -108,7 +108,7 @@ float octahedron(vec3 pt, float s) {
     pt = abs(pt);
     float m = pt.x + pt.y + pt.z - s;
 
-//    return m*0.57735027;
+    //    return m*0.57735027;
     vec3 q;
 
     if (3*pt.x < m) q = pt.xyz;
@@ -120,13 +120,15 @@ float octahedron(vec3 pt, float s) {
     return length(vec3(q.x, q.y-s+K, q.z-K));
 }
 
-float outer_frame(vec3 pt, float s) {
+float outer_frame(vec3 pt, float s, int i) {
     pt = pt - vec3(0, s-1, 0);
-//    float t = (pt.y+1.5) * sin(currentTime*0.5);
-    float t = currentTime;
+    //    float t = (pt.y+1.5) * sin(currentTime*0.5);
+    float t = sqrt(2*PI);
+    float m = mod(currentTime, 2*t);
+    t = PI*sin(m)*i;
     vec3 p = pt;
     pt.x = p.x * cos(t) - p.z * sin(t);
-//    pt.y = pt.y/2;
+    //    pt.y = pt.y/2;
     pt.z = p.x * sin(t) + p.z * cos(t);
     float oct =  octahedron(pt, s);
     float cir = cube(pt, s/2);
@@ -136,23 +138,23 @@ float outer_frame(vec3 pt, float s) {
 }
 
 float Outer_frame(vec3 pt, float s) {
-//    if (pt.x>-4*s && pt.x<4*s) {
-//        pt.x = mod(pt.x, 4*s)-2*s;
-//    }
+    //    if (pt.x>-4*s && pt.x<4*s) {
+    //        pt.x = mod(pt.x, 4*s)-2*s;
+    //    }
     float X = pt.x;
     float val = 10000;
     for (int i = -1; i<2; i+=2) {
         pt = vec3(X + i*4*s, pt.y, pt.z);
-        val = min(val, outer_frame(pt, s));
+        val = min(val, outer_frame(pt, s, i));
     }
 
     return val;
 }
 
 float box(vec3 pt, float s, float phase) {
-        vec3 p = pt;
-//        pt.x = rotateX(p, currentTime+phase);
-//        pt.z = rotateZ(p, phase+currentTime);
+    vec3 p = pt;
+    //        pt.x = rotateX(p, currentTime+phase);
+    //        pt.z = rotateZ(p, phase+currentTime);
     vec3 q = abs(pt) - vec3(s, 0.001, s);
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0)-0.6;
 }
@@ -182,7 +184,7 @@ float cuboid(vec3 pt, vec3 b) {
 float small_cylinder(vec3 pt, float radius, float s) {
     float p = PI/2;
     vec3 PT = pt;
-//    float sc1 = small_cylinder(pt, radius, s);
+    //    float sc1 = small_cylinder(pt, radius, s);
 
     pt.x = PT.x * cos(p) - PT.y * sin(p);
     pt.y = PT.x * sin(p) + PT.y * cos(p);
@@ -210,18 +212,27 @@ float three_small_cylinder(vec3 pt, float radius, float s) {
 }
 
 vec3 animate(vec3 pt) {
-    float t = mod(currentTime/3, 3);
+    float t = mod(currentTime/2, 6);
     float angle = mod(t, 1)*PI / 2;
     vec3 p = pt;
     if (t<1) {
+        pt.x = p.y * cos(angle) - p.x * sin(angle);
+        pt.y = p.y * sin(angle) + p.x * cos(angle);
+    } else if (t < 2) {
+        pt.x = p.z * cos(angle) - p.x * sin(angle);
+        pt.z = p.z * sin(angle) + p.x * cos(angle);
+    } else if (t < 3) {
+        pt.y = p.y * cos(angle) - p.z * sin(angle);
+        pt.z = p.y * sin(angle) + p.z * cos(angle);
+    } else if (t < 4) {
         pt.x = p.x * cos(angle) - p.y * sin(angle);
         pt.y = p.x * sin(angle) + p.y * cos(angle);
-    } else if (t < 2) {
+    } else if (t < 5) {
         pt.x = p.x * cos(angle) - p.z * sin(angle);
         pt.z = p.x * sin(angle) + p.z * cos(angle);
     } else {
-        pt.y = p.y * cos(angle) - p.z * sin(angle);
-        pt.z = p.y * sin(angle) + p.z * cos(angle);
+        pt.y = p.z * cos(angle) - p.y * sin(angle);
+        pt.z = p.z * sin(angle) + p.y * cos(angle);
     }
 
     return pt;
@@ -229,6 +240,7 @@ vec3 animate(vec3 pt) {
 
 
 float final_artifact(vec3 pt, float radius, float s) {
+    pt = pt - vec3(0, 2, 0);
     pt = animate(pt);
     float tsc = three_small_cylinder(pt, radius, s);
     float c = sphere(pt, s-3);
@@ -270,7 +282,17 @@ vec3 getColor(vec3 pt) {
     vec3 blue = vec3(0.4, 0.4, 1);
     vec3 red = vec3(1, 0.4, 0.4);
 
-    if (flr(pt)>=CLOSE_ENOUGH) return vec3(1);
+    if(final_artifact(pt, 1, 5)<=CLOSE_ENOUGH) {
+        float t = mod(currentTime/3, 3);
+        if (t<1) {
+            return mix(green, blue, mod(t, 1));
+        } else if (t<2) {
+            return mix(blue, red, mod(t, 1));
+        } else {
+            return mix(red, green, mod(t, 1));
+        }
+
+    } else if (flr(pt)>=CLOSE_ENOUGH) return vec3(1);
     else { //Handling the color
 
         float dis = abs(SCENE(pt));
